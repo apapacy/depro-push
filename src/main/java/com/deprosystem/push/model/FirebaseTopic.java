@@ -18,16 +18,21 @@ import org.hibernate.annotations.UpdateTimestamp;
 
 
 @Entity
-@Table(name = "firebase_token")
-public class FirebaseToken {
-
+@Table(name = "firebase_topic")
+public class FirebaseTopic {
+   
     @Id
     @Column(length = 4096)
     public String id;
 
     @Column(unique = false)
     public long userId;
-
+    
+    @Column(length = 4096)
+    public String topic;
+    
+    public boolean enabled;
+    
     private OffsetDateTime created;
 
     private OffsetDateTime updated;
@@ -41,6 +46,5 @@ public class FirebaseToken {
     @PreUpdate
     protected void onUpdate() {
         updated = OffsetDateTime.now(ZoneId.of("UTC"));
-    }
-
+    } 
 }

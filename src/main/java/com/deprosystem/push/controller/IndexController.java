@@ -9,6 +9,8 @@ package com.deprosystem.push.controller;
 import com.deprosystem.push.bean.FireBaseConfig;
 import com.deprosystem.push.model.FirebaseTokenRepository;
 import com.deprosystem.push.model.FirebaseToken;
+import com.deprosystem.push.model.FirebaseTopic;
+import com.deprosystem.push.model.FirebaseTopicRepository;
 import com.google.firebase.messaging.AndroidConfig;
 import com.google.firebase.messaging.AndroidNotification;
 import com.google.firebase.messaging.ApnsConfig;
@@ -30,11 +32,15 @@ import java.util.Map;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.RequestBody;
 
-    class inputFirebaseToken{
-        public String id;
+    class InputFirebaseToken{
+        public String token;
         public Long userId;
+        public String[] topics;
     }
 
+    class Output {
+        public String result = "OK";
+    }
 
 
 @RestController
@@ -43,28 +49,54 @@ public class IndexController {
     @Autowired
     private final FirebaseTokenRepository firebaseTokenRepository;
     
+    @Autowired
+    private final FirebaseTopicRepository firebaseTopicRepository;
+
     private final FireBaseConfig fireBaseConfig;
 
     //public IndexController(VisitsRepository visitsRepository) {
     //    this.visitsRepository = visitsRepository;
     //}
 
-    public IndexController(FireBaseConfig fireBaseConfig, FirebaseTokenRepository firebaseTokenRepository) {
+    public IndexController(
+            FireBaseConfig fireBaseConfig,
+            FirebaseTokenRepository firebaseTokenRepository,
+            FirebaseTopicRepository firebaseTopicRepository) {
         this.fireBaseConfig = fireBaseConfig;
         this.firebaseTokenRepository = firebaseTokenRepository;
-    }
-
+        this.firebaseTopicRepository = firebaseTopicRepository;
+    }   
     
-    
-    
-    @PostMapping("/firebase-token")
-    public FirebaseToken postToken(@RequestBody inputFirebaseToken token) {
+    @PostMapping("/subscribe")
+    public Output subscribe(@RequestBody InputFirebaseToken token) {
         FirebaseToken firebaseToken = new FirebaseToken();
-        firebaseToken.id = token.id;
+        firebaseToken.id = token.token;
         firebaseToken.userId = token.userId;
         this.firebaseTokenRepository.save(firebaseToken);
-        return firebaseToken;
+        for (int i = 0; i < token.topics.length; i++) {
+            FirebaseTopic firebaseTopic = new FirebaseTopic();
+            firebaseTopic.id = token.userId + ":" + token.topics[i];
+            firebaseTopic.userId = token.userId;
+            firebaseTopic.topic = token.topics[i];
+            firebaseTopic.enabled = true;
+            this.firebaseTopicRepository.save(firebaseTopic);
+        }
+        return new Output();
     }
+
+    @PostMapping("/unsubscribe")
+    public Output unsubscribe(@RequestBody InputFirebaseToken token) {
+        for (int i = 0; i < token.topics.length; i++) {
+            FirebaseTopic firebaseTopic = new FirebaseTopic();
+            firebaseTopic.id = token.userId + ":" + token.topics[i];
+            firebaseTopic.userId = token.userId;
+            firebaseTopic.topic = token.topics[i];
+            firebaseTopic.enabled = false;
+            this.firebaseTopicRepository.save(firebaseTopic);
+        }
+        return new Output();
+    }
+
     
     @GetMapping("/test")
     public String index() throws FirebaseMessagingException {
@@ -106,6 +138,6 @@ System.out.println("Successfully sent message: " + response);
         //visit.description = String.format("Visited at %s", LocalDateTime.now());
         //visitsRepository.save(visit);
 
-        return "index";
+        return "index++";
     }
 }
