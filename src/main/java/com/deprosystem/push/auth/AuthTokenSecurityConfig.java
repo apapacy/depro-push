@@ -5,6 +5,8 @@
  */
 package com.deprosystem.push.auth;
 
+import com.deprosystem.push.model.TokenUserRepository;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.PropertySource;
@@ -32,11 +34,18 @@ public class AuthTokenSecurityConfig extends WebSecurityConfigurerAdapter {
     //TODO: retrieve this token value from data source
     @Value("${howtodoinjava.http.auth.tokenValue}")
     private String authHeaderValue;
+    
+    @Autowired
+    private final TokenUserRepository tokenUserRepository;
+
+    public AuthTokenSecurityConfig(TokenUserRepository tokenUserRepository){
+        this.tokenUserRepository = tokenUserRepository;
+    }
  
     @Override
     protected void configure(HttpSecurity httpSecurity) throws Exception 
     {
-        PreAuthTokenHeaderFilter filter = new PreAuthTokenHeaderFilter(authHeaderName);
+        PreAuthTokenHeaderFilter filter = new PreAuthTokenHeaderFilter(this.tokenUserRepository, authHeaderName);
          
         filter.setAuthenticationManager(new AuthenticationManager() 
         {
@@ -46,7 +55,7 @@ public class AuthTokenSecurityConfig extends WebSecurityConfigurerAdapter {
             {
                 String principal = (String) authentication.getPrincipal();
                  
-                if (!authHeaderValue.equals(principal))
+                if (principal == null)
                 {
                     throw new BadCredentialsException("The API key was not found "
                                                 + "or not the expected value.");
@@ -57,7 +66,7 @@ public class AuthTokenSecurityConfig extends WebSecurityConfigurerAdapter {
         });
          
         httpSecurity.
-            antMatcher("/api/**")
+            antMatcher("/**")
             .csrf()
                 .disable()
             .sessionManagement()

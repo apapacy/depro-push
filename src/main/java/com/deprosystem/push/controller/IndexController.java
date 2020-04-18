@@ -21,6 +21,7 @@ import com.google.firebase.messaging.Message;
 import com.google.firebase.messaging.Notification;
 import com.google.firebase.messaging.WebpushConfig;
 import com.google.firebase.messaging.WebpushNotification;
+import java.security.Principal;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -99,7 +100,7 @@ public class IndexController {
 
     
     @GetMapping("/test")
-    public String index() throws FirebaseMessagingException {
+    public String index(Principal principal) throws FirebaseMessagingException {
         Map<String, String> model = new HashMap<>();
         model.put("name", "Alexey++--");
         // This registration token comes from the client FCM SDKs.
@@ -138,6 +139,6 @@ System.out.println("Successfully sent message: " + response);
         //visit.description = String.format("Visited at %s", LocalDateTime.now());
         //visitsRepository.save(visit);
 
-        return "index++";
+        return "index++" + principal.getName();
     }
 }

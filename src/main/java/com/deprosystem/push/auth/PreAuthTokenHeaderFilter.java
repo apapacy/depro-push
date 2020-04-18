@@ -5,23 +5,35 @@
  */
 package com.deprosystem.push.auth;
 
+import com.deprosystem.push.model.TokenUser;
+import com.deprosystem.push.model.TokenUserRepository;
+import java.util.Optional;
 import javax.servlet.http.HttpServletRequest;
+import org.springframework.beans.factory.annotation.Autowired;
  
 import org.springframework.security.web.authentication
             .preauth.AbstractPreAuthenticatedProcessingFilter;
- 
+import org.springframework.stereotype.Component;
+
 public class PreAuthTokenHeaderFilter 
         extends AbstractPreAuthenticatedProcessingFilter {
  
+    
+    //@Autowired
+    private final TokenUserRepository tokenUserRepository;
+  
     private String authHeaderName;
  
-    public PreAuthTokenHeaderFilter(String authHeaderName) {
+    public PreAuthTokenHeaderFilter(TokenUserRepository tokenUserRepository, String authHeaderName) {
         this.authHeaderName = authHeaderName;
+        this.tokenUserRepository = tokenUserRepository;
     }
  
     @Override
     protected Object getPreAuthenticatedPrincipal(HttpServletRequest request) {
-        return request.getHeader(authHeaderName);
+        String token = request.getHeader(authHeaderName);
+        Optional<TokenUser> user = this.tokenUserRepository.findById(token);
+        return user.isPresent() ? user.get().userId : null;
     }
  
     @Override
