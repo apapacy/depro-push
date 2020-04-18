@@ -5,8 +5,9 @@
  */
 package com.deprosystem.push.model;
 
+import java.util.List;
 import org.springframework.data.repository.CrudRepository;
 
 public interface TokenUserRepository  extends CrudRepository<TokenUser, String> {
-    
+    List<TokenUser> findByToken(String token);
 }

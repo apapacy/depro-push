@@ -7,6 +7,7 @@ package com.deprosystem.push.auth;
 
 import com.deprosystem.push.model.TokenUser;
 import com.deprosystem.push.model.TokenUserRepository;
+import java.util.List;
 import java.util.Optional;
 import javax.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -32,8 +33,8 @@ public class PreAuthTokenHeaderFilter
     @Override
     protected Object getPreAuthenticatedPrincipal(HttpServletRequest request) {
         String token = request.getHeader(authHeaderName);
-        Optional<TokenUser> user = this.tokenUserRepository.findById(token);
-        return user.isPresent() ? user.get().userId : null;
+        List<TokenUser> users = this.tokenUserRepository.findByToken(token);
+        return users.isEmpty() ? null : users.get(0).userId;
     }
  
     @Override
