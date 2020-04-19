@@ -11,7 +11,7 @@
     <groupId>com.deprosystem</groupId>
     <artifactId>push</artifactId>
     <version>0.0.1-SNAPSHOT</version>
-    <packaging>jar</packaging>
+    <packaging>war</packaging>
     <name>push</name>
     <description>Demo project for Spring Boot</description>
 
