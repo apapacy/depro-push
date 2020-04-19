@@ -45,8 +45,23 @@ import org.springframework.web.bind.annotation.RequestBody;
 
     class Output {
         public String result = "OK";
+        public String error;
+        public Output(){
+            super();
+        }
+        public Output(String error) {
+            this.error = error;
+        }
     }
 
+    class InputMessage {
+        public String topic;
+        public Long userId;
+        public String title;
+        public String body;
+        public Map<String, String> data;
+    }
+    
 
 @RestController
 public class IndexController {
@@ -115,6 +130,31 @@ public class IndexController {
         }
         return new Output();
     }
+
+    @PostMapping("/send-to-usser")
+    public Output sendToTopic(@RequestBody InputMessage input) {
+        List<FirebaseToken> tokens = this.firebaseTokenRepository.findByUserId(input.userId);
+        for (int i = 0; i < tokens.size(); i++)
+            try {
+                FirebaseManager.sendMessageToToken(tokens.get(i).id, input.title, input.body, input.data);
+            } catch (FirebaseMessagingException ex) {
+                Logger.getLogger(IndexController.class.getName()).log(Level.SEVERE, null, ex);
+            }
+             return new Output();
+    }
+
+
+        @PostMapping("/send-to-topic")
+    public Output sendToUser(@RequestBody InputMessage input) {
+        try {
+            FirebaseManager.sendMessageToTopic(input.topic, input.title, input.body, input.data);
+            return new Output();
+        } catch (FirebaseMessagingException ex) {
+            Logger.getLogger(IndexController.class.getName()).log(Level.SEVERE, null, ex);
+            return new Output(ex.getMessage());
+        }
+    }
+
 
     
     @GetMapping("/test")
