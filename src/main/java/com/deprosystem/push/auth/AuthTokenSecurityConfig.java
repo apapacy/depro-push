@@ -65,12 +65,10 @@ public class AuthTokenSecurityConfig extends WebSecurityConfigurerAdapter {
             }
         });
          
-        httpSecurity.
-            antMatcher("/**")
-            .csrf()
-                .disable()
-            .sessionManagement()
-                .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
+        httpSecurity
+            .regexMatcher("/.*subscribe")
+            .csrf().disable()
+            .sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS)
             .and()
                 .addFilter(filter)
                 .addFilterBefore(new ExceptionTranslationFilter(

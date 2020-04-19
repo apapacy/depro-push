@@ -7,6 +7,7 @@ package com.deprosystem.push.controller;
 
 
 import com.deprosystem.push.bean.FireBaseConfig;
+import com.deprosystem.push.firebse.FirebaseManager;
 import com.deprosystem.push.model.FirebaseTokenRepository;
 import com.deprosystem.push.model.FirebaseToken;
 import com.deprosystem.push.model.FirebaseTopic;
@@ -29,13 +30,16 @@ import org.springframework.web.servlet.ModelAndView;
 
 import java.time.LocalDateTime;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import java.util.stream.Collectors;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.RequestBody;
 
     class InputFirebaseToken{
         public String token;
-        public Long userId;
         public String[] topics;
     }
 
@@ -69,38 +73,52 @@ public class IndexController {
     }   
     
     @PostMapping("/subscribe")
-    public Output subscribe(@RequestBody InputFirebaseToken token) {
+    public Output subscribe(@RequestBody InputFirebaseToken input, Principal principal) {
         FirebaseToken firebaseToken = new FirebaseToken();
-        firebaseToken.id = token.token;
-        firebaseToken.userId = token.userId;
+        firebaseToken.id = input.token;
+        firebaseToken.userId = Long.parseLong(principal.getName());
         this.firebaseTokenRepository.save(firebaseToken);
-        for (int i = 0; i < token.topics.length; i++) {
+        if (input.topics != null) for (int i = 0; i < input.topics.length; i++) {
             FirebaseTopic firebaseTopic = new FirebaseTopic();
-            firebaseTopic.id = token.userId + ":" + token.topics[i];
-            firebaseTopic.userId = token.userId;
-            firebaseTopic.topic = token.topics[i];
+            firebaseTopic.id = principal.getName() + ":" + input.topics[i];
+            firebaseTopic.userId = Long.parseLong(principal.getName());
+            firebaseTopic.topic = input.topics[i];
             firebaseTopic.enabled = true;
             this.firebaseTopicRepository.save(firebaseTopic);
+            try {
+                FirebaseManager.subscribeToTopic(input.token, input.topics[i]);
+            } catch (FirebaseMessagingException ex) {
+                Logger.getLogger(IndexController.class.getName()).log(Level.SEVERE, null, ex);
+            }
         }
         return new Output();
     }
 
     @PostMapping("/unsubscribe")
-    public Output unsubscribe(@RequestBody InputFirebaseToken token) {
-        for (int i = 0; i < token.topics.length; i++) {
+    public Output unsubscribe(@RequestBody InputFirebaseToken input, Principal principal) {
+        List<FirebaseToken> tokens = this.firebaseTokenRepository.findByUserId(Long.parseLong(principal.getName()));
+        for (int i = 0; i < input.topics.length; i++) {
             FirebaseTopic firebaseTopic = new FirebaseTopic();
-            firebaseTopic.id = token.userId + ":" + token.topics[i];
-            firebaseTopic.userId = token.userId;
-            firebaseTopic.topic = token.topics[i];
+            firebaseTopic.id = principal.getName() + ":" + input.topics[i];
+            firebaseTopic.userId = Long.parseLong(principal.getName());
+            firebaseTopic.topic = input.topics[i];
             firebaseTopic.enabled = false;
             this.firebaseTopicRepository.save(firebaseTopic);
+            if (!tokens.isEmpty()) {
+                List<String> list = tokens.stream().map(item  -> item.id).collect(Collectors.toList());
+                try {
+                    FirebaseManager.unsubscribeFromTopic(list, input.topics[i]);
+                } catch (FirebaseMessagingException ex) {
+                    Logger.getLogger(IndexController.class.getName()).log(Level.SEVERE, null, ex);
+                }
+            }
         }
         return new Output();
     }
 
     
     @GetMapping("/test")
-    public String index(Principal principal) throws FirebaseMessagingException {
+    public String index() throws FirebaseMessagingException {
         Map<String, String> model = new HashMap<>();
         model.put("name", "Alexey++--");
         // This registration token comes from the client FCM SDKs.
@@ -139,6 +157,51 @@ System.out.println("Successfully sent message: " + response);
         //visit.description = String.format("Visited at %s", LocalDateTime.now());
         //visitsRepository.save(visit);
 
-        return "index++" + principal.getName();
+        return "index++";
     }
+
+    @GetMapping("/test1")
+    public String test1() throws FirebaseMessagingException {
+        Map<String, String> model = new HashMap<>();
+        model.put("name", "Alexey++--");
+        // This registration token comes from the client FCM SDKs.
+String registrationToken = "fAKGIDRybgLMy-bc3WdV2C:APA91bF-ybDZU-ws3br72nVFO-oUDyLefVwfMkCXmwenUJjBR5KkQY4zUzI_5eOiEcqQgVJssf6vfkGePzGtIbEQmAktZRubeVeOQJm8NiFDSxyRd5IhS994wM1fYGedTIyT7JqFHAk3";
+
+// See documentation on defining a message payload.
+Message message = Message.builder()
+      .setNotification(new Notification("title", "body"))
+      .setAndroidConfig(AndroidConfig.builder()
+          .setNotification(AndroidNotification.builder()
+              //.setIcon(ANDROID_NEWS_ICON_RESOURCE)
+              .build())
+          .build())
+      .setApnsConfig(ApnsConfig.builder()
+          .setAps(Aps.builder()
+              //.setBadge(APNS_NEWS_BADGE_RESOURCE)
+              .build())
+          .build())
+      .setWebpushConfig(WebpushConfig.builder()
+          //.setNotification(new WebpushNotification(null, null, WEBPUSH_NEWS_ICON_URL))
+          .build())
+      // .setTopic("auto-news")
+      .setTopic("a")
+    .build();
+
+// Send a message to the device corresponding to the provided
+// registration token.
+String response = FirebaseMessaging.getInstance().send(message);
+// Response is a message ID string.
+System.out.println("Successfully sent message: " + response);
+        
+        
+        
+
+        //Visit visit = new Visit();
+        //visit.description = String.format("Visited at %s", LocalDateTime.now());
+        //visitsRepository.save(visit);
+
+        return "index++";
+    }
+
+
 }

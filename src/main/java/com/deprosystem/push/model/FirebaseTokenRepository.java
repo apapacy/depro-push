@@ -6,9 +6,10 @@
 package com.deprosystem.push.model;
 
 
+import java.util.List;
 import org.springframework.data.repository.CrudRepository;
 
 public interface FirebaseTokenRepository extends CrudRepository<FirebaseToken, String> {
-    
+        List<FirebaseToken> findByUserId(Long userId);
 }
 
