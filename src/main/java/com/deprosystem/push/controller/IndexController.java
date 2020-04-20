@@ -29,6 +29,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.servlet.ModelAndView;
 
 import java.time.LocalDateTime;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -109,6 +110,41 @@ public class IndexController {
         return new Output();
     }
 
+    @PostMapping("/subscribe_news")
+    public Output subscribeNews(@RequestBody InputFirebaseToken input, Principal principal) {
+        String topic = "news";
+        FirebaseToken firebaseToken = new FirebaseToken();
+        firebaseToken.id = input.token;
+        firebaseToken.userId = Long.parseLong(principal.getName());
+        this.firebaseTokenRepository.save(firebaseToken);
+        FirebaseTopic firebaseTopic = new FirebaseTopic();
+        firebaseTopic.id = principal.getName() + ":" + topic;
+        firebaseTopic.userId = Long.parseLong(principal.getName());
+        firebaseTopic.topic = topic;
+        firebaseTopic.enabled = true;
+        this.firebaseTopicRepository.save(firebaseTopic);
+        try {
+            FirebaseManager.subscribeToTopic(input.token, topic);
+        } catch (FirebaseMessagingException ex) {
+            Logger.getLogger(IndexController.class.getName()).log(Level.SEVERE, null, ex);
+            return new Output(ex.getMessage());
+        }
+        return new Output();
+    }
+
+
+    @PostMapping("/subscribe_events")
+    public Output subscribeEvents(@RequestBody InputFirebaseToken input) {
+        String topic = "events";
+        try {
+            FirebaseManager.subscribeToTopic(input.token, topic);
+        } catch (FirebaseMessagingException ex) {
+            Logger.getLogger(IndexController.class.getName()).log(Level.SEVERE, null, ex);
+            return new Output(ex.getMessage());
+        }
+        return new Output();
+    }
+    
     @PostMapping("/unsubscribe")
     public Output unsubscribe(@RequestBody InputFirebaseToken input, Principal principal) {
         List<FirebaseToken> tokens = this.firebaseTokenRepository.findByUserId(Long.parseLong(principal.getName()));
@@ -131,6 +167,40 @@ public class IndexController {
         return new Output();
     }
 
+    @PostMapping("/unsubscribe_news")
+    public Output unsubscribeNews(@RequestBody InputFirebaseToken input, Principal principal) {
+        String topic = "news";
+        List<FirebaseToken> tokens = this.firebaseTokenRepository.findByUserId(Long.parseLong(principal.getName()));
+        FirebaseTopic firebaseTopic = new FirebaseTopic();
+        firebaseTopic.id = principal.getName() + ":" + topic;
+        firebaseTopic.userId = Long.parseLong(principal.getName());
+        firebaseTopic.topic = topic;
+        firebaseTopic.enabled = false;
+        this.firebaseTopicRepository.save(firebaseTopic);
+        if (!tokens.isEmpty()) {
+            List<String> list = tokens.stream().map(item -> item.id).collect(Collectors.toList());
+            try {
+                FirebaseManager.unsubscribeFromTopic(list, topic);
+            } catch (FirebaseMessagingException ex) {
+                Logger.getLogger(IndexController.class.getName()).log(Level.SEVERE, null, ex);
+                return new Output(ex.getMessage());
+            }
+        }
+        return new Output();
+    }
+
+    @PostMapping("/unsubscribe_events")
+    public Output unsubscribeEvents(@RequestBody InputFirebaseToken input) {
+        String topic = "events";
+        try {
+            FirebaseManager.unsubscribeFromTopic(Arrays.asList(input.token), topic);
+        } catch (FirebaseMessagingException ex) {
+            Logger.getLogger(IndexController.class.getName()).log(Level.SEVERE, null, ex);
+            return new Output(ex.getMessage());
+        }
+        return new Output();
+    }
+    
     @PostMapping("/send-to-user")
     public Output sendToTopic(@RequestBody InputMessage input) {
         List<FirebaseToken> tokens = this.firebaseTokenRepository.findByUserId(input.userId);
@@ -153,4 +223,34 @@ public class IndexController {
             return new Output(ex.getMessage());
         }
     }
+    
+    @GetMapping("/send_news")
+    public Output sendNews() {
+        Map<String, String> data = new HashMap<String, String>() {{
+            put("push_type", "news");
+            put("push_data", "168");
+        }};
+        try {
+            FirebaseManager.sendMessageToTopic("news", "news", "News Message", data);
+            return new Output();
+        } catch (FirebaseMessagingException ex) {
+            Logger.getLogger(IndexController.class.getName()).log(Level.SEVERE, null, ex);
+            return new Output(ex.getMessage());
+        }
+    }
+
+    @GetMapping("/send_events")
+    public Output sendEvents() {
+        Map<String, String> data = new HashMap<String, String>() {{
+            put("push_type", "events");
+        }};
+        try {
+            FirebaseManager.sendMessageToTopic("events", "events", "Events Message", data);
+            return new Output();
+        } catch (FirebaseMessagingException ex) {
+            Logger.getLogger(IndexController.class.getName()).log(Level.SEVERE, null, ex);
+            return new Output(ex.getMessage());
+        }
+    }
+    
 }

@@ -33,6 +33,9 @@ public class PreAuthTokenHeaderFilter
     @Override
     protected Object getPreAuthenticatedPrincipal(HttpServletRequest request) {
         String token = request.getHeader(authHeaderName);
+        if (token == null) {
+            return "N/A";
+        }
         List<TokenUser> users = this.tokenUserRepository.findByToken(token);
         return users.isEmpty() ? null : users.get(0).userId;
     }

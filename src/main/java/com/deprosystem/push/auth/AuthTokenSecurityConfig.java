@@ -55,18 +55,18 @@ public class AuthTokenSecurityConfig extends WebSecurityConfigurerAdapter {
             {
                 String principal = (String) authentication.getPrincipal();
                  
-                if (principal == null)
-                {
-                    throw new BadCredentialsException("The API key was not found "
-                                                + "or not the expected value.");
-                }
+                //if (principal == null)
+                //{
+                //    throw new BadCredentialsException("The API key was not found "
+                //                                + "or not the expected value.");
+                //}
                 authentication.setAuthenticated(true);
                 return authentication;
             }
         });
          
         httpSecurity
-            .regexMatcher("/.*subscribe")
+            .antMatcher("/**")
             .csrf().disable()
             .sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS)
             .and()
