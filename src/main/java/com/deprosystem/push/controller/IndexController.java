@@ -5,7 +5,7 @@
  */
 package com.deprosystem.push.controller;
 
-
+import org.springframework.core.task.TaskExecutor;
 import com.deprosystem.push.bean.FireBaseConfig;
 import com.deprosystem.push.firebase.FirebaseManager;
 import com.deprosystem.push.model.FirebaseTokenRepository;
@@ -40,7 +40,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.RequestBody;
 
     class InputFirebaseToken{
-        public String token;
+        public String push_token;
         public String[] topics;
     }
 
@@ -74,6 +74,8 @@ public class IndexController {
     private final FirebaseTopicRepository firebaseTopicRepository;
 
     private final FireBaseConfig fireBaseConfig;
+    
+    private final TaskExecutor taskExecutor;
 
     //public IndexController(VisitsRepository visitsRepository) {
     //    this.visitsRepository = visitsRepository;
@@ -82,16 +84,18 @@ public class IndexController {
     public IndexController(
             FireBaseConfig fireBaseConfig,
             FirebaseTokenRepository firebaseTokenRepository,
-            FirebaseTopicRepository firebaseTopicRepository) {
+            FirebaseTopicRepository firebaseTopicRepository,
+            TaskExecutor taskExecutor) {
         this.fireBaseConfig = fireBaseConfig;
         this.firebaseTokenRepository = firebaseTokenRepository;
         this.firebaseTopicRepository = firebaseTopicRepository;
+        this.taskExecutor = taskExecutor;
     }   
     
     @PostMapping("/subscribe")
     public Output subscribe(@RequestBody InputFirebaseToken input, Principal principal) {
         FirebaseToken firebaseToken = new FirebaseToken();
-        firebaseToken.id = input.token;
+        firebaseToken.id = input.push_token;
         firebaseToken.userId = Long.parseLong(principal.getName());
         this.firebaseTokenRepository.save(firebaseToken);
         if (input.topics != null) for (int i = 0; i < input.topics.length; i++) {
@@ -102,7 +106,7 @@ public class IndexController {
             firebaseTopic.enabled = true;
             this.firebaseTopicRepository.save(firebaseTopic);
             try {
-                FirebaseManager.subscribeToTopic(input.token, input.topics[i]);
+                FirebaseManager.subscribeToTopic(input.push_token, input.topics[i]);
             } catch (FirebaseMessagingException ex) {
                 Logger.getLogger(IndexController.class.getName()).log(Level.SEVERE, null, ex);
             }
@@ -114,7 +118,7 @@ public class IndexController {
     public Output subscribeNews(@RequestBody InputFirebaseToken input, Principal principal) {
         String topic = "news";
         FirebaseToken firebaseToken = new FirebaseToken();
-        firebaseToken.id = input.token;
+        firebaseToken.id = input.push_token;
         firebaseToken.userId = Long.parseLong(principal.getName());
         this.firebaseTokenRepository.save(firebaseToken);
         FirebaseTopic firebaseTopic = new FirebaseTopic();
@@ -124,7 +128,7 @@ public class IndexController {
         firebaseTopic.enabled = true;
         this.firebaseTopicRepository.save(firebaseTopic);
         try {
-            FirebaseManager.subscribeToTopic(input.token, topic);
+            FirebaseManager.subscribeToTopic(input.push_token, topic);
         } catch (FirebaseMessagingException ex) {
             Logger.getLogger(IndexController.class.getName()).log(Level.SEVERE, null, ex);
             return new Output(ex.getMessage());
@@ -137,7 +141,7 @@ public class IndexController {
     public Output subscribeEvents(@RequestBody InputFirebaseToken input) {
         String topic = "events";
         try {
-            FirebaseManager.subscribeToTopic(input.token, topic);
+            FirebaseManager.subscribeToTopic(input.push_token, topic);
         } catch (FirebaseMessagingException ex) {
             Logger.getLogger(IndexController.class.getName()).log(Level.SEVERE, null, ex);
             return new Output(ex.getMessage());
@@ -168,7 +172,7 @@ public class IndexController {
     }
 
     @PostMapping("/unsubscribe_news")
-    public Output unsubscribeNews(@RequestBody InputFirebaseToken input, Principal principal) {
+    public Output unsubscribeNews(Principal principal) {
         String topic = "news";
         List<FirebaseToken> tokens = this.firebaseTokenRepository.findByUserId(Long.parseLong(principal.getName()));
         FirebaseTopic firebaseTopic = new FirebaseTopic();
@@ -193,7 +197,7 @@ public class IndexController {
     public Output unsubscribeEvents(@RequestBody InputFirebaseToken input) {
         String topic = "events";
         try {
-            FirebaseManager.unsubscribeFromTopic(Arrays.asList(input.token), topic);
+            FirebaseManager.unsubscribeFromTopic(Arrays.asList(input.push_token), topic);
         } catch (FirebaseMessagingException ex) {
             Logger.getLogger(IndexController.class.getName()).log(Level.SEVERE, null, ex);
             return new Output(ex.getMessage());
@@ -252,5 +256,32 @@ public class IndexController {
             return new Output(ex.getMessage());
         }
     }
+    
+    
+     private class MessagePrinterTask implements Runnable {
+
+        private String message;
+
+        public MessagePrinterTask(String message) {
+            this.message = message;
+        }
+
+        public void run() {
+            try {
+                Thread.sleep(15000);
+            } catch (InterruptedException ex) {
+                Logger.getLogger(IndexController.class.getName()).log(Level.SEVERE, null, ex);
+            }
+            System.out.println(message);
+        }
+
+    }
+     
+    @GetMapping("/test")
+    public Output test() {
+        this.taskExecutor.execute(new MessagePrinterTask("798798798798"));
+        return new Output();
+    }
+    
     
 }

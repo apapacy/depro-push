@@ -41,20 +41,23 @@ public class FirebaseManager {
             messageBuilder = Message.builder().putAllData(data);
         }
         Message message = messageBuilder
-                .setNotification(new Notification(title, body))
-                .setAndroidConfig(AndroidConfig.builder()
-                        .setNotification(AndroidNotification.builder()
-                                //.setIcon(ANDROID_NEWS_ICON_RESOURCE)
-                                .build())
-                        .build())
-                .setApnsConfig(ApnsConfig.builder()
-                        .setAps(Aps.builder()
-                                //.setBadge(APNS_NEWS_BADGE_RESOURCE)
-                                .build())
-                        .build())
-                .setWebpushConfig(WebpushConfig.builder()
-                        //.setNotification(new WebpushNotification(null, null, WEBPUSH_NEWS_ICON_URL))
-                        .build())
+                .putData("title", title)
+                .putData("body", body)
+                .putData("message", body)
+                //.setNotification(new Notification(title, body))
+                //.setAndroidConfig(AndroidConfig.builder()
+                //        .setNotification(AndroidNotification.builder()
+                //                //.setIcon(ANDROID_NEWS_ICON_RESOURCE)
+                //                .build())
+                //        .build())
+                //.setApnsConfig(ApnsConfig.builder()
+                //        .setAps(Aps.builder()
+                //                //.setBadge(APNS_NEWS_BADGE_RESOURCE)
+                //                .build())
+                //        .build())
+                //.setWebpushConfig(WebpushConfig.builder()
+                //        //.setNotification(new WebpushNotification(null, null, WEBPUSH_NEWS_ICON_URL))
+                //        .build())
                 .setTopic(topic)
                 .build();
         String response = FirebaseMessaging.getInstance().send(message);
@@ -69,25 +72,28 @@ public class FirebaseManager {
             messageBuilder = Message.builder().putAllData(data);
         }
         Message message = messageBuilder
-                .setNotification(new Notification(title, body))
-                .setAndroidConfig(AndroidConfig.builder()
-                        .setNotification(AndroidNotification.builder()
-                                //.setIcon(ANDROID_NEWS_ICON_RESOURCE)
-                                .build())
-                        .build())
-                .setApnsConfig(ApnsConfig.builder()
-                        .setAps(Aps.builder()
-                                //.setBadge(APNS_NEWS_BADGE_RESOURCE)
-                                .build())
-                        .build())
-                .setWebpushConfig(WebpushConfig.builder()
-                        //.setNotification(new WebpushNotification(null, null, WEBPUSH_NEWS_ICON_URL))
-                        .build())
+                .putData("title", title)
+                .putData("body", body)
+                .putData("message", body)
+                //.setNotification(new Notification(title, body))
+                //.setAndroidConfig(AndroidConfig.builder()
+                //        .setNotification(AndroidNotification.builder()
+                //                //.setIcon(ANDROID_NEWS_ICON_RESOURCE)
+                //                .build())
+                //        .build())
+                //.setApnsConfig(ApnsConfig.builder()
+                //        .setAps(Aps.builder()
+                //                //.setBadge(APNS_NEWS_BADGE_RESOURCE)
+                //                .build())
+                //        .build())
+                //.setWebpushConfig(WebpushConfig.builder()
+                //        //.setNotification(new WebpushNotification(null, null, WEBPUSH_NEWS_ICON_URL))
+                //        .build())
                 .setToken(token)
                 .build();
         String response = FirebaseMessaging.getInstance().send(message);
         System.out.println("Successfully sent message: " + response);
     }
-
-    
+        
+   
 }
